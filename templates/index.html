@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Car Recommendation System</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        .sidebar {
+            transition: all 0.3s;
+        }
+        @media (max-width: 768px) {
+            .sidebar {
+                position: fixed;
+                left: -100%;
+                top: 0;
+                bottom: 0;
+                z-index: 50;
+            }
+            .sidebar.active {
+                left: 0;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+    <div class="flex h-screen">
+        <!-- Sidebar -->
+        <div class="sidebar bg-white w-64 p-4 shadow-md">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-xl font-bold">Recommendation Types</h2>
+                <button class="md:hidden" onclick="toggleSidebar()">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+
+            <div class="space-y-2">
+                <div class="p-3 rounded-lg bg-blue-50 border border-blue-100">
+                    <h3 class="font-medium text-blue-800">Rule-Based</h3>
+                    <p class="text-sm text-blue-600">Based on explicit rules and filters</p>
+                </div>
+
+                <div class="p-3 rounded-lg hover:bg-gray-50 cursor-pointer">
+                    <h3 class="font-medium">Content-Based</h3>
+                    <p class="text-sm text-gray-600">Based on review text similarity</p>
+                </div>
+
+                <div class="p-3 rounded-lg hover:bg-gray-50 cursor-pointer">
+                    <h3 class="font-medium">Collaborative</h3>
+                    <p class="text-sm text-gray-600">Based on similar users' preferences</p>
+                </div>
+
+                <div class="p-3 rounded-lg hover:bg-gray-50 cursor-pointer">
+                    <h3 class="font-medium">Hybrid</h3>
+                    <p class="text-sm text-gray-600">Combination of multiple methods</p>
+                </div>
+            </div>
+
+            <div class="mt-6 pt-4 border-t">
+                <h3 class="font-medium mb-2">Filter Options</h3>
+                <label class="flex items-center space-x-2 mb-2">
+                    <input type="checkbox" name="show_explanation" checked class="rounded text-blue-500">
+                    <span>Show explanation</span>
+                </label>
+                <label class="flex items-center space-x-2">
+                    <input type="checkbox" name="only_available" class="rounded text-blue-500">
+                    <span>Only show available</span>
+                </label>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="flex-1 overflow-auto">
+            <div class="container mx-auto p-6">
+                <button class="md:hidden mb-4 bg-gray-200 p-2 rounded" onclick="toggleSidebar()">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                    </svg>
+                </button>
+
+                <h1 class="text-3xl font-bold mb-6 text-center">Car Recommendation System</h1>
+                <form action="/recommend" method="POST" class="bg-white p-6 rounded shadow-md">
+                    <input type="hidden" name="recommendation_type" value="rule_based" id="recommendation_type">
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Left Column -->
+                        <div>
+                            <div class="mb-4">
+                                <label class="block text-gray-700 font-medium mb-2">Select Brand (Optional)</label>
+                                <select name="brand" class="w-full p-2 border rounded">
+                                    <option value="">Any Brand</option>
+                                    {% for brand in brands %}
+                                    <option value="{{ brand }}">{{ brand }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="mb-4">
+                                <label class="block text-gray-700 font-medium mb-2">Primary Use Case</label>
+                                <select name="primary_use" class="w-full p-2 border rounded">
+                                    <option value="">Select your primary use...</option>
+                                    <option value="luxury">Luxury/Comfort</option>
+                                    <option value="family">Family/Safety</option>
+                                    <option value="commuter">Commuter/Value</option>
+                                    <option value="performance">Performance/Driving</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Right Column -->
+                        <div>
+                            <div class="mb-4">
+                                <label class="block text-gray-700 font-medium mb-2">Minimum Requirements</label>
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-gray-600 text-sm mb-1">Reliability</label>
+                                        <select name="min_reliability" class="w-full p-2 border rounded">
+                                            <option value="0">Any</option>
+                                            <option value="3">3+ Stars</option>
+                                            <option value="4" selected>4+ Stars</option>
+                                            <option value="5">5 Stars</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-gray-600 text-sm mb-1">Comfort</label>
+                                        <select name="min_comfort" class="w-full p-2 border rounded">
+                                            <option value="0">Any</option>
+                                            <option value="3">3+ Stars</option>
+                                            <option value="4" selected>4+ Stars</option>
+                                            <option value="5">5 Stars</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mb-4">
+                                <label class="block text-gray-700 font-medium mb-2">Important Features</label>
+                                <div class="flex flex-wrap gap-2">
+                                    <label class="flex items-center space-x-1 bg-gray-100 px-3 py-1 rounded">
+                                        <input type="checkbox" name="features" value="heated_seats" class="rounded">
+                                        <span>Heated Seats</span>
+                                    </label>
+                                    <label class="flex items-center space-x-1 bg-gray-100 px-3 py-1 rounded">
+                                        <input type="checkbox" name="features" value="good_mileage" class="rounded">
+                                        <span>Good Mileage</span>
+                                    </label>
+                                    <label class="flex items-center space-x-1 bg-gray-100 px-3 py-1 rounded">
+                                        <input type="checkbox" name="features" value="safety" class="rounded">
+                                        <span>Safety</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="w-full bg-blue-500 text-white p-3 rounded hover:bg-blue-600 transition duration-200 font-medium">
+                        Get Recommendations
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function toggleSidebar() {
+            document.querySelector('.sidebar').classList.toggle('active');
+        }
+
+        // Set recommendation type when sidebar items are clicked
+        document.querySelectorAll('.sidebar > div > div:not(:first-child)').forEach(item => {
+            item.addEventListener('click', function() {
+                const type = this.querySelector('h3').textContent.toLowerCase();
+                document.getElementById('recommendation_type').value = type;
+
+                // Update UI
+                document.querySelectorAll('.sidebar > div > div').forEach(i => {
+                    i.classList.remove('bg-blue-50', 'border-blue-100');
+                    i.querySelector('h3').classList.remove('text-blue-800');
+                    i.querySelector('p').classList.remove('text-blue-600');
+                });
+
+                this.classList.add('bg-blue-50', 'border-blue-100');
+                this.querySelector('h3').classList.add('text-blue-800');
+                this.querySelector('p').classList.add('text-blue-600');
+            });
+        });
+    </script>
+</body>
+</html>

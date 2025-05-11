@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recommendation Results</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        .review-excerpt {
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        .match-reason {
+            background-color: #EFF6FF;
+            border-left: 4px solid #3B82F6;
+        }
+        .similarity-badge {
+            background-color: #ECFDF5;
+            color: #065F46;
+        }
+        .method-tab {
+            transition: all 0.3s ease;
+        }
+        .method-tab.active {
+            border-bottom: 3px solid #3B82F6;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div class="container mx-auto px-4 py-8 max-w-6xl">
+        <h1 class="text-3xl font-bold text-center mb-8 text-gray-800">Recommendation Results</h1>
+
+        <!-- Recommendation Type Tabs -->
+        <div class="flex border-b mb-6">
+            <button class="method-tab px-4 py-2 mr-2 active" onclick="showRecommendation('rule-based')">
+                Rule-Based
+            </button>
+            <button class="method-tab px-4 py-2 mr-2" onclick="showRecommendation('content-based')">
+                Content-Based
+            </button>
+            <button class="method-tab px-4 py-2" onclick="showRecommendation('comparison')">
+                Comparison
+            </button>
+        </div>
+
+        <!-- User Preferences Summary -->
+        <div class="bg-white rounded-lg shadow-md p-6 mb-8">
+            <h2 class="text-xl font-semibold mb-4 text-gray-700">Your Search Criteria</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                    <p class="text-sm font-medium text-gray-500">Method</p>
+                    <p class="font-medium">{{ rec_type|replace('_', ' ')|title }}</p>
+                </div>
+                <div>
+                    <p class="text-sm font-medium text-gray-500">Primary Use</p>
+                    <p class="font-medium">{{ preferences.primary_use|default('Not specified', true)|title }}</p>
+                </div>
+                <div>
+                    <p class="text-sm font-medium text-gray-500">Brand</p>
+                    <p class="font-medium">{{ preferences.brand|default('Any brand', true)|title }}</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Rule-Based Recommendations (Initially shown) -->
+        <div id="rule-based-section" class="recommendation-section">
+            <div class="bg-white rounded-lg shadow-md p-6 mb-8">
+                <h2 class="text-xl font-semibold mb-4 text-gray-700 flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-blue-500" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M3 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 10a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 15a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clip-rule="evenodd" />
+                    </svg>
+                    Rule-Based Recommendations
+                </h2>
+
+                {% if recommendations and rec_type == 'rule_based' %}
+                    <div class="space-y-6">
+                        {% for car in recommendations %}
+                        <div class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                            <!-- Car details... (same as before) -->
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center py-8 text-gray-500">
+                        <p>No rule-based recommendations available for this search.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Content-Based Recommendations (Initially hidden) -->
+        <div id="content-based-section" class="recommendation-section" style="display: none;">
+            <div class="bg-white rounded-lg shadow-md p-6 mb-8">
+                <h2 class="text-xl font-semibold mb-4 text-gray-700 flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-green-500" viewBox="0 0 20 20" fill="currentColor">
+                        <path d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10A7.969 7.969 0 015.5 14c1.669 0 3.218.51 4.5 1.385A7.962 7.962 0 0114.5 14c1.255 0 2.443.29 3.5.804v-10A7.968 7.968 0 0014.5 4c-1.255 0-2.443.29-3.5.804V12a1 1 0 11-2 0V4.804z" />
+                    </svg>
+                    Content-Based Recommendations
+                </h2>
+
+                {% if content_based %}
+                    <div class="space-y-6">
+                        {% for car in content_based %}
+                        <div class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                            <div class="flex flex-col md:flex-row gap-4">
+                                <!-- Car Image Placeholder -->
+                                <div class="w-full md:w-1/4 bg-gray-200 rounded flex items-center justify-center">
+                                    <span class="text-gray-500">Image not available</span>
+                                </div>
+
+                                <!-- Car Details -->
+                                <div class="w-full md:w-3/4">
+                                    <div class="flex justify-between items-start">
+                                        <div>
+                                            <h3 class="text-xl font-bold text-gray-800">{{ car.Brand }} {{ car['Car Model'] }}</h3>
+                                            <p class="text-gray-600">{{ car['Used For']|default('', true) }}</p>
+                                        </div>
+                                        <div class="flex items-center">
+                                            <span class="similarity-badge text-xs font-medium px-2 py-1 rounded-full mr-2">
+                                                Similarity: {{ car.similarity|default('High', true) }}
+                                            </span>
+                                            <span class="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">
+                                                {{ car.Rating }} ★
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    <!-- Key Attributes -->
+                                    <div class="my-3 grid grid-cols-2 md:grid-cols-4 gap-4">
+                                        <div>
+                                            <p class="text-sm text-gray-500">Reliability</p>
+                                            <p class="font-medium">{{ car.Reliability|default('N/A', true) }}/5</p>
+                                        </div>
+                                        <div>
+                                            <p class="text-sm text-gray-500">Comfort</p>
+                                            <p class="font-medium">{{ car.Comfort|default('N/A', true) }}/5</p>
+                                        </div>
+                                        <div>
+                                            <p class="text-sm text-gray-500">Performance</p>
+                                            <p class="font-medium">{{ car.Performance|default('N/A', true) }}/5</p>
+                                        </div>
+                                        <div>
+                                            <p class="text-sm text-gray-500">Value</p>
+                                            <p class="font-medium">{{ car.Value|default('N/A', true) }}/5</p>
+                                        </div>
+                                    </div>
+
+                                    <!-- Review Excerpt -->
+                                    <div class="mb-3">
+                                        <p class="text-sm font-medium text-gray-700 mb-1">What owners say:</p>
+                                        <div class="review-excerpt text-gray-600">
+                                            {{ car['Review Text']|default('No review text available', true) }}
+                                        </div>
+                                    </div>
+
+                                    <!-- Match Reasons -->
+                                    <div class="match-reason p-3 rounded">
+                                        <p class="text-sm font-medium text-gray-700 mb-1">Why this was recommended:</p>
+                                        <ul class="list-disc list-inside text-sm text-gray-600">
+                                            <li>Similar review content and features</li>
+                                            <li>Matching keywords: {{ car.matching_keywords|default('N/A', true) }}</li>
+                                            <li>Text similarity score: {{ car.similarity_score|default('N/A', true)|round(2) }}</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center py-8 text-gray-500">
+                        <p>No content-based recommendations available for this search.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Recommendation Method Analysis -->
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <h2 class="text-xl font-semibold mb-4 text-gray-700">Method Analysis</h2>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Current Method Analysis -->
+                <div>
+                    <h3 class="font-medium text-lg mb-3 flex items-center">
+                        {% if rec_type == 'rule_based' %}
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-blue-500" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M3 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 10a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 15a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clip-rule="evenodd" />
+                        </svg>
+                        Rule-Based Filtering
+                        {% else %}
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-green-500" viewBox="0 0 20 20" fill="currentColor">
+                            <path d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10A7.969 7.969 0 015.5 14c1.669 0 3.218.51 4.5 1.385A7.962 7.962 0 0114.5 14c1.255 0 2.443.29 3.5.804v-10A7.968 7.968 0 0014.5 4c-1.255 0-2.443.29-3.5.804V12a1 1 0 11-2 0V4.804z" />
+                        </svg>
+                        Content-Based Filtering
+                        {% endif %}
+                    </h3>
+
+                    <div class="pros-cons">
+                        {% if rec_type == 'rule_based' %}
+                        <div class="mb-4">
+                            <h4 class="font-medium text-green-700 mb-2">Strengths:</h4>
+                            <ul class="list-disc list-inside text-sm text-gray-700 space-y-1">
+                                <li>Clear, transparent logic for recommendations</li>
+                                <li>Precise control over recommendation criteria</li>
+                                <li>Fast execution with predictable results</li>
+                                <li>Easy to understand and modify rules</li>
+                            </ul>
+                        </div>
+                        <div>
+                            <h4 class="font-medium text-red-700 mb-2">Limitations:</h4>
+                            <ul class="list-disc list-inside text-sm text-gray-700 space-y-1">
+                                <li>May miss good matches that don't fit exact rules</li>
+                                <li>Requires manual tuning of rules</li>
+                                <li>Doesn't learn from user behavior over time</li>
+                                <li>Can be too rigid for complex preferences</li>
+                            </ul>
+                        </div>
+                        {% else %}
+                        <div class="mb-4">
+                            <h4 class="font-medium text-green-700 mb-2">Strengths:</h4>
+                            <ul class="list-disc list-inside text-sm text-gray-700 space-y-1">
+                                <li>Discovers non-obvious similarities between items</li>
+                                <li>Adapts to patterns in review text and features</li>
+                                <li>Can recommend items without explicit rules</li>
+                                <li>Good for textual data analysis</li>
+                            </ul>
+                        </div>
+                        <div>
+                            <h4 class="font-medium text-red-700 mb-2">Limitations:</h4>
+                            <ul class="list-disc list-inside text-sm text-gray-700 space-y-1">
+                                <li>Dependent on quality of text/content data</li>
+                                <li>Can be harder to interpret why items were recommended</li>
+                                <li>May recommend items that are too similar</li>
+                                <li>Requires sufficient textual data to work well</li>
+                            </ul>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- When to Use -->
+                <div>
+                    <h3 class="font-medium text-lg mb-3 text-gray-700">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-yellow-500 inline" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+                        </svg>
+                        When To Use This Method
+                    </h3>
+
+                    {% if rec_type == 'rule_based' %}
+                    <div class="bg-blue-50 p-4 rounded-lg">
+                        <p class="text-sm text-gray-700 mb-3">
+                            Rule-based filtering works best when you have clear, specific requirements and want complete control over the recommendation logic.
+                        </p>
+                        <p class="text-sm font-medium">Good for:</p>
+                        <ul class="list-disc list-inside text-sm text-gray-700 mt-1 space-y-1">
+                            <li>Finding cars that meet exact specifications</li>
+                            <li>When transparency in recommendations is important</li>
+                            <li>Situations where you need predictable, consistent results</li>
+                            <li>Cases where you have well-defined quality criteria</li>
+                        </ul>
+                    </div>
+                    {% else %}
+                    <div class="bg-green-50 p-4 rounded-lg">
+                        <p class="text-sm text-gray-700 mb-3">
+                            Content-based filtering excels when you want to find items similar to what you like based on their features and descriptions.
+                        </p>
+                        <p class="text-sm font-medium">Good for:</p>
+                        <ul class="list-disc list-inside text-sm text-gray-700 mt-1 space-y-1">
+                            <li>Discovering cars with similar characteristics</li>
+                            <li>When you have rich textual data (reviews, descriptions)</li>
+                            <li>Finding alternatives to a car you already like</li>
+                            <li>Cases where you want to explore similar options</li>
+                        </ul>
+                    </div>
+                    {% endif %}
+
+                    <div class="mt-4">
+                        <button onclick="showRecommendation('comparison')" class="text-blue-600 hover:text-blue-800 text-sm font-medium flex items-center">
+                            Compare with other methods
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 ml-1" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M12.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-2.293-2.293a1 1 0 010-1.414z" clip-rule="evenodd" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="text-center mt-8">
+            <a href="/" class="inline-block bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-md transition-colors font-medium">
+                Start New Search
+            </a>
+        </div>
+    </div>
+
+    <script>
+        function showRecommendation(type) {
+            // Hide all sections
+            document.querySelectorAll('.recommendation-section').forEach(section => {
+                section.style.display = 'none';
+            });
+
+            // Update tabs
+            document.querySelectorAll('.method-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+
+            // Show selected section and activate tab
+            if (type === 'rule-based') {
+                document.getElementById('rule-based-section').style.display = 'block';
+                document.querySelectorAll('.method-tab')[0].classList.add('active');
+            } else if (type === 'content-based') {
+                document.getElementById('content-based-section').style.display = 'block';
+                document.querySelectorAll('.method-tab')[1].classList.add('active');
+            } else {
+                // Handle comparison tab
+                document.querySelectorAll('.method-tab')[2].classList.add('active');
+            }
+        }
+    </script>
+</body>
+</html>
